@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="theme-color" content="#0D0B1A"/>
+<meta name="description" content="SHEGUARD X — Offline Autonomous Safety System"/>
+<title>SHEGUARD X</title>
+<link rel="manifest" href="#"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS — Soft-trust palette
+═══════════════════════════════════════════ */
+:root {
+  --primary:   #7B61FF;
+  --primary-d: #5B41DF;
+  --pink:      #FF6B9A;
+  --pink-soft: rgba(255,107,154,0.15);
+  --safe:      #00D68F;
+  --safe-bg:   rgba(0,214,143,0.1);
+  --danger:    #FF3B5C;
+  --danger-bg: rgba(255,59,92,0.12);
+  --warn:      #FFB83F;
+  --bg:        #0D0B1A;
+  --surf1:     #13101F;
+  --surf2:     #1A1630;
+  --surf3:     #211D3A;
+  --border:    rgba(255,255,255,0.07);
+  --border-p:  rgba(123,97,255,0.25);
+  --text:      #EDE9FF;
+  --muted:     #7A7492;
+  --mono:      'JetBrains Mono', monospace;
+  --sans:      'DM Sans', sans-serif;
+  --display:   'Syne', sans-serif;
+}
+
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ambient mesh */
+body::before {
+  content:'';
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 50% at 20% 0%,   rgba(123,97,255,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 85% 90%,  rgba(255,107,154,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at 50% 50%,  rgba(0,214,143,0.04)  0%, transparent 50%);
+}
+
+/* ALERT STATE — whole body flicker */
+body.alert-mode::after {
+  content:'';
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background: rgba(255,59,92,0.04);
+  animation: body-flicker 1.2s ease-in-out infinite alternate;
+}
+@keyframes body-flicker {
+  from { opacity:0.3; }
+  to   { opacity:1;   }
+}
+
+/* ── LAYOUT ── */
+#app { position:relative; z-index:1; max-width:900px; margin:0 auto; padding:20px 16px 80px; }
+
+/* ── HEADER ── */
+.hdr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 16px 0 28px;
+}
+.logo {
+  display:flex; align-items:center; gap:10px;
+  font-family: var(--display); font-size:22px; font-weight:800;
+  letter-spacing:-0.5px;
+}
+.logo-shield {
+  width:38px; height:38px; border-radius:10px;
+  background: linear-gradient(135deg,var(--primary),var(--pink));
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+  box-shadow: 0 0 20px rgba(123,97,255,0.4);
+}
+.logo span { color:var(--pink); }
+
+.hdr-right { display:flex; align-items:center; gap:10px; }
+.online-pill {
+  display:flex; align-items:center; gap:6px;
+  background:var(--surf2); border:1px solid var(--border);
+  border-radius:20px; padding:6px 14px;
+  font-size:11px; font-weight:600; letter-spacing:0.5px;
+  cursor:pointer; transition:all 0.2s;
+}
+.online-pill .pip { width:7px; height:7px; border-radius:50%; background:var(--safe); animation:pip-blink 2s infinite; box-shadow:0 0 6px var(--safe); }
+.online-pill.offline .pip { background:var(--warn); box-shadow:0 0 6px var(--warn); animation:none; }
+.online-pill.offline .pip-label { color:var(--warn); }
+@keyframes pip-blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── MASTER STATUS ORB ── */
+.orb-zone { display:flex; flex-direction:column; align-items:center; padding:8px 0 32px; }
+.orb-wrap { position:relative; width:200px; height:200px; display:flex; align-items:center; justify-content:center; }
+
+.orb-ring {
+  position:absolute; border-radius:50%; border:1.5px solid;
+  animation:orb-expand 3s ease-out infinite;
+  opacity:0;
+}
+.orb-ring:nth-child(1){ width:130px;height:130px; border-color:rgba(123,97,255,0.5); animation-delay:0s; }
+.orb-ring:nth-child(2){ width:160px;height:160px; border-color:rgba(123,97,255,0.3); animation-delay:1s; }
+.orb-ring:nth-child(3){ width:195px;height:195px; border-color:rgba(123,97,255,0.15); animation-delay:2s; }
+@keyframes orb-expand {
+  0%  { transform:scale(0.7); opacity:0.8; }
+  100%{ transform:scale(1.1); opacity:0; }
+}
+.alert-mode .orb-ring { border-color:rgba(255,59,92,0.6); }
+.alert-mode .orb-ring:nth-child(1){ border-color:rgba(255,59,92,0.7); animation-duration:0.8s; }
+.alert-mode .orb-ring:nth-child(2){ border-color:rgba(255,59,92,0.4); animation-duration:0.8s; animation-delay:0.27s; }
+.alert-mode .orb-ring:nth-child(3){ border-color:rgba(255,59,92,0.2); animation-duration:0.8s; animation-delay:0.54s; }
+
+.orb {
+  width:100px; height:100px; border-radius:50%;
+  background: radial-gradient(circle at 40% 35%, rgba(123,97,255,0.9), rgba(91,65,223,1));
+  box-shadow: 0 0 40px rgba(123,97,255,0.5), inset 0 2px 4px rgba(255,255,255,0.2);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px; cursor:default; transition:all 0.5s ease; z-index:2;
+}
+.orb.safe-orb {
+  background: radial-gradient(circle at 40% 35%, rgba(0,214,143,0.9), rgba(0,180,120,1));
+  box-shadow: 0 0 40px rgba(0,214,143,0.5), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.orb.alert-orb {
+  background: radial-gradient(circle at 40% 35%, #FF6B85, var(--danger));
+  box-shadow: 0 0 60px rgba(255,59,92,0.7), inset 0 2px 4px rgba(255,255,255,0.2);
+  animation: orb-alert-pulse 0.7s ease-in-out infinite alternate;
+}
+@keyframes orb-alert-pulse {
+  from { box-shadow: 0 0 40px rgba(255,59,92,0.5); transform:scale(0.98); }
+  to   { box-shadow: 0 0 80px rgba(255,59,92,0.9), 0 0 120px rgba(255,59,92,0.3); transform:scale(1.03); }
+}
+.orb-emoji  { font-size:28px; line-height:1; }
+.orb-label  { font-family:var(--display); font-size:11px; font-weight:800; letter-spacing:2px; color:rgba(255,255,255,0.9); }
+
+.status-headline {
+  margin-top:18px; text-align:center;
+  font-family:var(--display); font-size:32px; font-weight:800;
+  letter-spacing:-1px; transition:color 0.4s;
+}
+.status-headline.safe   { color: var(--safe); }
+.status-headline.danger { color: var(--danger); animation: headline-shake 0.4s ease; }
+@keyframes headline-shake {
+  0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}
+}
+
+.status-sub { font-size:13px; color:var(--muted); margin-top:6px; font-family:var(--mono); letter-spacing:0.5px; }
+
+/* ── RISK BADGE ── */
+.risk-bar {
+  display:flex; align-items:center; justify-content:center; gap:10px; margin-top:16px;
+}
+.risk-label { font-size:11px; color:var(--muted); font-weight:600; letter-spacing:1px; }
+.risk-pill {
+  padding:4px 16px; border-radius:20px;
+  font-family:var(--display); font-size:12px; font-weight:800; letter-spacing:1.5px;
+  transition:all 0.3s;
+}
+.risk-pill.low    { background:rgba(0,214,143,0.15); color:var(--safe);   border:1px solid rgba(0,214,143,0.3); }
+.risk-pill.medium { background:rgba(255,184,63,0.15); color:var(--warn);  border:1px solid rgba(255,184,63,0.3); }
+.risk-pill.high   { background:rgba(255,59,92,0.15);  color:var(--danger);border:1px solid rgba(255,59,92,0.4);
+                    animation:risk-flash 1s ease-in-out infinite alternate; }
+@keyframes risk-flash { from{opacity:0.7} to{opacity:1} }
+
+.risk-factors { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; justify-content:center; }
+.rf { font-size:10px; background:var(--surf2); border:1px solid var(--border); border-radius:12px; padding:3px 10px; color:var(--muted); }
+
+/* ── TRIGGER BUTTONS ── */
+.btn-zone {
+  display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;
+}
+.btn-danger {
+  grid-column:1/-1;
+  padding:20px; border-radius:16px; border:none; cursor:pointer;
+  background: linear-gradient(135deg,#FF3B5C,#C0392B);
+  font-family:var(--display); font-size:18px; font-weight:800; letter-spacing:0.5px; color:#fff;
+  box-shadow: 0 8px 32px rgba(255,59,92,0.4);
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  transition:all 0.2s;
+  position:relative; overflow:hidden;
+}
+.btn-danger::before {
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(135deg,rgba(255,255,255,0.1),transparent);
+  opacity:0; transition:opacity 0.2s;
+}
+.btn-danger:hover::before { opacity:1; }
+.btn-danger:hover { transform:translateY(-2px); box-shadow: 0 12px 40px rgba(255,59,92,0.6); }
+.btn-danger:active { transform:translateY(0); }
+.btn-danger.active-danger { animation:btn-alert 0.6s ease-in-out infinite alternate; }
+@keyframes btn-alert { from{box-shadow:0 8px 32px rgba(255,59,92,0.4)} to{box-shadow:0 8px 60px rgba(255,59,92,0.8)} }
+
+.btn-secondary {
+  padding:14px; border-radius:14px; border:1px solid var(--border); cursor:pointer;
+  background:var(--surf2);
+  font-family:var(--sans); font-size:13px; font-weight:600; color:var(--text);
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:all 0.2s;
+}
+.btn-secondary:hover { border-color:var(--border-p); background:var(--surf3); transform:translateY(-1px); }
+.btn-secondary:active { transform:translateY(0); }
+.btn-secondary.mic-active { border-color:rgba(123,97,255,0.5); background:rgba(123,97,255,0.1); color:var(--primary); }
+.btn-secondary.mic-active .mic-dot { animation:mic-pulse 0.5s ease-in-out infinite alternate; }
+@keyframes mic-pulse { from{opacity:0.5} to{opacity:1} }
+
+/* ── CARDS ── */
+.card-grid  { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.card-full  { margin-bottom:14px; }
+
+.card {
+  background:var(--surf1);
+  border:1px solid var(--border);
+  border-radius:18px; padding:20px;
+  position:relative; overflow:hidden;
+  transition:border-color 0.3s, box-shadow 0.3s;
+}
+.card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent);
+}
+.card:hover { border-color:rgba(255,255,255,0.11); }
+.card-title {
+  font-family:var(--display); font-size:11px; font-weight:700;
+  letter-spacing:2px; text-transform:uppercase; color:var(--muted);
+  display:flex; align-items:center; gap:8px; margin-bottom:14px;
+}
+.card-title .ct-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+
+/* ── LOCATION CARD ── */
+.loc-coords {
+  font-family:var(--mono); font-size:14px; font-weight:500;
+  color:var(--safe); margin-bottom:10px; line-height:1.7;
+}
+.loc-coords.pending { color:var(--muted); animation:loc-blink 1s ease-in-out infinite; }
+@keyframes loc-blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.map-thumb {
+  height:90px; border-radius:12px; background:var(--surf3);
+  position:relative; overflow:hidden; margin-bottom:12px;
+}
+.map-thumb::before {
+  content:'';position:absolute;inset:0;
+  background:
+    linear-gradient(rgba(33,29,58,0.7) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(33,29,58,0.7) 1px, transparent 1px);
+  background-size:18px 18px;
+}
+.map-roads { position:absolute;inset:0; }
+.map-roads svg { width:100%;height:100%; }
+.map-pin-c { position:absolute;top:50%;left:50%;transform:translate(-50%,-50%); }
+.pin-c-dot {
+  width:14px;height:14px;border-radius:50%;background:var(--danger);
+  border:3px solid #fff; box-shadow:0 0 16px rgba(255,59,92,0.6);
+  animation:pin-c-pulse 1.4s ease-in-out infinite;
+}
+@keyframes pin-c-pulse {
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.25)}
+}
+.pin-c-ring {
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:36px;height:36px;border-radius:50%;border:2px solid var(--danger);
+  animation:pin-c-ring 1.4s ease-out infinite; opacity:0;
+}
+@keyframes pin-c-ring {
+  0%{opacity:0.8;transform:translate(-50%,-50%) scale(0.5)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(2)}
+}
+
+/* ── ALERT MESSAGE BOX ── */
+.alert-msg-box {
+  background:var(--surf2); border:1px solid rgba(255,59,92,0.2);
+  border-radius:12px; padding:14px; margin-bottom:12px;
+  font-family:var(--mono); font-size:12px; line-height:1.8; color:var(--text);
+  display:none;
+}
+.alert-msg-box.visible { display:block; animation:fade-in 0.4s ease; }
+.alert-msg-box .msg-line-danger { color:var(--danger); font-weight:700; }
+.alert-msg-box .msg-line-coord  { color:var(--safe); }
+.alert-msg-box .msg-line-link   { color:var(--primary); text-decoration:underline; word-break:break-all; }
+
+/* ── ACTION BUTTONS ── */
+.action-row { display:flex; flex-direction:column; gap:8px; }
+.act-btn {
+  width:100%; padding:12px 16px; border-radius:10px; border:none; cursor:pointer;
+  font-family:var(--sans); font-size:13px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:all 0.2s; opacity:0.35; pointer-events:none;
+}
+.act-btn.live { opacity:1; pointer-events:all; }
+.act-btn.sms-btn { background:linear-gradient(90deg,#FF3B5C,#FF6B9A); color:#fff; }
+.act-btn.wa-btn  { background:linear-gradient(90deg,#25D366,#128C7E); color:#fff; }
+.act-btn.copy-btn{ background:var(--surf3); color:var(--text); border:1px solid var(--border); }
+.act-btn:hover { transform:translateY(-1px); filter:brightness(1.1); }
+.act-btn:active { transform:translateY(0); }
+
+/* ── RECORDING CARD ── */
+.rec-indicator {
+  display:flex; align-items:center; gap:12px;
+  background:var(--surf2); border-radius:12px; padding:14px;
+  margin-bottom:12px;
+}
+.rec-dot {
+  width:12px;height:12px;border-radius:50%;background:var(--muted);
+  transition:background 0.3s;
+}
+.rec-dot.recording { background:var(--danger); animation:rec-blink 0.8s ease-in-out infinite alternate; box-shadow:0 0 10px rgba(255,59,92,0.7); }
+@keyframes rec-blink { from{opacity:0.5} to{opacity:1} }
+.rec-text { font-size:13px; font-weight:600; }
+.rec-sub  { font-size:11px; color:var(--muted); font-family:var(--mono); }
+.audio-bars { display:flex; align-items:flex-end; gap:3px; height:32px; margin-top:10px; }
+.ab {
+  width:5px; background:var(--surf3); border-radius:3px;
+  transition:height 0.15s, background 0.3s; height:6px;
+}
+.ab.active { background:var(--primary); }
+.ab.danger-active { background:var(--danger); }
+
+/* ── LOG ── */
+.log-scroll { max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+.log-scroll::-webkit-scrollbar { width:3px; }
+.log-scroll::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+.log-entry {
+  display:flex; align-items:flex-start; gap:10px;
+  background:var(--surf2); border-radius:10px; padding:10px 12px;
+  border-left:3px solid transparent; font-size:12px; line-height:1.5;
+  animation:log-in 0.3s ease;
+}
+@keyframes log-in { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+.log-entry.safe   { border-color:var(--safe);   }
+.log-entry.warn   { border-color:var(--warn);   }
+.log-entry.danger { border-color:var(--danger); }
+.log-ts { font-family:var(--mono); font-size:10px; color:var(--muted); white-space:nowrap; padding-top:1px; }
+.log-body { flex:1; }
+
+/* ── OFFLINE BANNER ── */
+.offline-banner {
+  display:none; align-items:center; gap:10px;
+  background:rgba(255,184,63,0.1); border:1px solid rgba(255,184,63,0.3);
+  border-radius:12px; padding:12px 16px; margin-bottom:16px;
+  font-size:12px; font-weight:600; color:var(--warn);
+}
+.offline-banner.show { display:flex; animation:fade-in 0.3s ease; }
+
+/* ── NETWORK BAR ── */
+.net-bar {
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  background:var(--surf1); border:1px solid var(--border);
+  border-radius:14px; padding:12px 16px; margin-bottom:16px;
+}
+.net-tag {
+  padding:5px 14px; border-radius:20px; font-size:11px; font-weight:700;
+  cursor:pointer; transition:all 0.2s; border:1px solid transparent;
+  color:var(--muted); background:var(--surf2);
+}
+.net-tag.on { background:rgba(0,214,143,0.12); color:var(--safe); border-color:rgba(0,214,143,0.3); }
+.net-tag.on-warn { background:rgba(255,184,63,0.12); color:var(--warn); border-color:rgba(255,184,63,0.3); }
+.net-tag.on-off { background:rgba(255,59,92,0.1); color:var(--danger); border-color:rgba(255,59,92,0.3); }
+.net-sep { flex:1; }
+.net-mode-label { font-size:11px; color:var(--muted); font-family:var(--mono); }
+
+/* ── SAFE RESET ── */
+.reset-btn {
+  display:none; width:100%; padding:14px; border-radius:14px; border:none; cursor:pointer;
+  background:var(--surf2); color:var(--safe); font-family:var(--display); font-size:14px; font-weight:700;
+  border:1px solid rgba(0,214,143,0.3); transition:all 0.2s; margin-bottom:14px;
+}
+.reset-btn.show { display:block; animation:fade-in 0.3s ease; }
+.reset-btn:hover { background:rgba(0,214,143,0.1); }
+
+@keyframes fade-in { from{opacity:0} to{opacity:1} }
+
+/* ── FOOTER ── */
+footer {
+  text-align:center; padding-top:28px; margin-top:28px;
+  border-top:1px solid var(--border);
+  font-size:11px; color:var(--muted); line-height:2;
+}
+footer strong { color:var(--text); }
+
+/* ── COPY TOAST ── */
+#toast {
+  position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(80px);
+  background:var(--surf3); border:1px solid var(--border); color:var(--text);
+  padding:10px 22px; border-radius:30px; font-size:13px; font-weight:600;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  transition:transform 0.3s ease; z-index:999;
+}
+#toast.show { transform:translateX(-50%) translateY(0); }
+
+/* ── RESPONSIVE ── */
+@media(max-width:640px){
+  .card-grid { grid-template-columns:1fr; }
+  .btn-zone  { grid-template-columns:1fr; }
+  .orb-wrap  { width:170px; height:170px; }
+  .orb       { width:90px; height:90px; }
+  .status-headline { font-size:26px; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="logo">
+      <div class="logo-shield">🛡</div>
+      SHEGUARD <span>X</span>
+    </div>
+    <div class="hdr-right">
+      <div class="online-pill" id="online-pill" onclick="toggleOfflineDemo()">
+        <div class="pip"></div>
+        <span class="pip-label" id="pip-label">ONLINE</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- OFFLINE DEMO BANNER -->
+  <div class="offline-banner" id="offline-banner">
+    📡 Offline Mode Active — SMS fallback enabled · Location cached · BLE mesh relay ON
+  </div>
+
+  <!-- NETWORK BAR -->
+  <div class="net-bar">
+    <span style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase">Mode:</span>
+    <div class="net-tag on"    id="n1" onclick="setNetMode('full')">📶 Full 4G</div>
+    <div class="net-tag"       id="n2" onclick="setNetMode('sms')">📱 SMS Fallback</div>
+    <div class="net-tag"       id="n3" onclick="setNetMode('ble')">📡 BLE Offline</div>
+    <div class="net-sep"></div>
+    <span class="net-mode-label" id="net-mode-label">All features active</span>
+  </div>
+
+  <!-- STATUS ORB -->
+  <div class="orb-zone">
+    <div class="orb-wrap" id="orb-wrap">
+      <div class="orb-ring"></div>
+      <div class="orb-ring"></div>
+      <div class="orb-ring"></div>
+      <div class="orb" id="main-orb">
+        <div class="orb-emoji" id="orb-emoji">🛡</div>
+        <div class="orb-label" id="orb-label">SAFE</div>
+      </div>
+    </div>
+    <div class="status-headline safe" id="status-headline">YOU ARE SAFE</div>
+    <div class="status-sub" id="status-sub">All systems monitoring · No threats detected</div>
+    <div class="risk-bar">
+      <span class="risk-label">RISK LEVEL</span>
+      <div class="risk-pill low" id="risk-pill">LOW</div>
+    </div>
+    <div class="risk-factors" id="risk-factors">
+      <div class="rf" id="rf-time">🕐 Daytime</div>
+      <div class="rf" id="rf-motion">🚶 Moving</div>
+      <div class="rf" id="rf-net">📶 Connected</div>
+    </div>
+  </div>
+
+  <!-- TRIGGER BUTTONS -->
+  <div class="btn-zone">
+    <button class="btn-danger" id="danger-btn" onclick="simulateDanger()">
+      <span>⚡</span> SIMULATE DANGER
+    </button>
+    <button class="btn-secondary" id="mic-btn" onclick="toggleMic()">
+      <span id="mic-icon">🎙</span>
+      <span id="mic-label">Enable Mic Detection</span>
+      <span class="mic-dot" id="mic-dot" style="width:7px;height:7px;border-radius:50%;background:var(--danger);display:none"></span>
+    </button>
+    <button class="btn-secondary" onclick="fetchLocation()">
+      <span>📍</span> Refresh Location
+    </button>
+  </div>
+
+  <!-- RESET BUTTON -->
+  <button class="reset-btn" id="reset-btn" onclick="resetSystem()">✅ Clear Alert — Return to SAFE Mode</button>
+
+  <!-- CARDS ROW 1 -->
+  <div class="card-grid">
+
+    <!-- LOCATION CARD -->
+    <div class="card">
+      <div class="card-title" style="color:#00D68F"><div class="ct-dot"></div>Live Location</div>
+      <div class="map-thumb">
+        <div class="map-roads">
+          <svg viewBox="0 0 260 90" xmlns="http://www.w3.org/2000/svg">
+            <line x1="0" y1="45" x2="260" y2="45" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+            <line x1="130" y1="0" x2="130" y2="90" stroke="rgba(255,255,255,0.04)" stroke-width="6"/>
+            <line x1="0"  y1="25" x2="260" y2="70" stroke="rgba(255,255,255,0.03)" stroke-width="4"/>
+            <line x1="60" y1="0"  x2="80"  y2="90" stroke="rgba(255,255,255,0.03)" stroke-width="3"/>
+            <line x1="190" y1="0" x2="175" y2="90" stroke="rgba(255,255,255,0.03)" stroke-width="3"/>
+          </svg>
+        </div>
+        <div class="map-pin-c">
+          <div class="pin-c-dot"></div>
+          <div class="pin-c-ring"></div>
+        </div>
+      </div>
+      <div class="loc-coords pending" id="loc-coords">⟳ Acquiring GPS lock…</div>
+      <div style="font-size:11px;color:var(--muted);font-family:var(--mono)" id="loc-accuracy">Accuracy: —</div>
+    </div>
+
+    <!-- RECORDING CARD -->
+    <div class="card">
+      <div class="card-title" style="color:var(--pink)"><div class="ct-dot" style="background:var(--pink)"></div>Evidence Capture</div>
+      <div class="rec-indicator">
+        <div class="rec-dot" id="rec-dot"></div>
+        <div>
+          <div class="rec-text" id="rec-text">Standby</div>
+          <div class="rec-sub"  id="rec-sub">Mic not recording</div>
+        </div>
+      </div>
+      <div class="audio-bars" id="audio-bars">
+        <div class="ab"></div><div class="ab"></div><div class="ab"></div>
+        <div class="ab"></div><div class="ab"></div><div class="ab"></div>
+        <div class="ab"></div><div class="ab"></div><div class="ab"></div>
+        <div class="ab"></div><div class="ab"></div><div class="ab"></div>
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:var(--muted)">Duration: <span id="rec-duration" style="font-family:var(--mono);color:var(--text)">—</span></div>
+    </div>
+  </div>
+
+  <!-- ALERT MESSAGE + ACTIONS (full width) -->
+  <div class="card card-full" id="alert-card">
+    <div class="card-title" style="color:var(--danger)"><div class="ct-dot" style="background:var(--danger)"></div>Emergency Alert</div>
+    <div class="alert-msg-box" id="alert-msg-box">
+      <div class="msg-line-danger">🚨 EMERGENCY ALERT — SHEGUARD X</div>
+      <div>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+      <div>User may be in DANGER. Immediate help needed.</div>
+      <div class="msg-line-coord" id="msg-coords">📍 Location: Fetching…</div>
+      <div class="msg-line-link" id="msg-maplink">🗺 Map: —</div>
+      <div>⏱ Time: <span id="msg-time">—</span></div>
+      <div>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+      <div>Please call immediately or contact authorities.</div>
+    </div>
+    <div class="action-row">
+      <button class="act-btn sms-btn" id="sms-btn" onclick="sendSMS()">📲 Send SMS Alert</button>
+      <button class="act-btn wa-btn"  id="wa-btn"  onclick="sendWhatsApp()">💬 Share via WhatsApp</button>
+      <button class="act-btn copy-btn" id="copy-btn" onclick="copyAlert()">📋 Copy Alert Message</button>
+    </div>
+  </div>
+
+  <!-- LOG (full width) -->
+  <div class="card card-full">
+    <div class="card-title"><div class="ct-dot"></div>Activity Log</div>
+    <div class="log-scroll" id="log-scroll">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <footer>
+    <strong>SHEGUARD X</strong> — Offline Autonomous Safety System &nbsp;·&nbsp; PWA Demo<br>
+    Geolocation API · MediaRecorder API · SMS · WhatsApp · BLE Simulation<br>
+    <span style="font-size:10px">In real emergency always call <strong>112</strong> · This is a demo product</span>
+  </footer>
+
+</div>
+
+<div id="toast">✅ Copied to clipboard!</div>
+
+<script>
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+let STATE = {
+  mode: 'safe',       // 'safe' | 'alert'
+  lat: null, lng: null,
+  netMode: 'full',    // full | sms | ble
+  offlineDemo: false,
+  micActive: false,
+  mediaRecorder: null,
+  recChunks: [],
+  recStart: null,
+  recInterval: null,
+  riskLevel: 'low',
+};
+
+/* ═══════════════════════════════════════
+   BOOT
+═══════════════════════════════════════ */
+window.addEventListener('load', () => {
+  addLog('safe','🛡 SHEGUARD X initialized · All sensors active','✅');
+  evaluateRisk();
+  fetchLocation();
+  setInterval(evaluateRisk, 30000);
+  setInterval(animateBars, 150);
+});
+
+/* ═══════════════════════════════════════
+   REAL LOCATION ENGINE (NO FAKE DATA)
+═══════════════════════════════════════ */
+function fetchLocation() {
+  const el = document.getElementById('loc-coords');
+  const accEl = document.getElementById('loc-accuracy');
+  
+  el.className = 'loc-coords pending';
+  el.style.color = '';
+  el.textContent = '⟳ Acquiring GPS lock…';
+  accEl.textContent = 'Accuracy: Requesting device access…';
+
+  if (!navigator.geolocation) {
+    displayLocationError('Geolocation is not supported by your browser.');
+    return;
+  }
+
+  // Attempt 1: High Accuracy Hardware GPS (15s timeout)
+  navigator.geolocation.getCurrentPosition(
+    pos => handleLocationSuccess(pos, 'GPS (High Accuracy)'),
+    err => {
+      console.warn('Hardware GPS failed, falling back to Network/Wi-Fi positioning...', err);
+      // Attempt 2: Cellular / Wi-Fi Triangulation (Fast response indoors)
+      navigator.geolocation.getCurrentPosition(
+        pos => handleLocationSuccess(pos, 'Cell/Wi-Fi Triangulation'),
+        error => handleLocationError(error),
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+      );
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+function handleLocationSuccess(pos, source) {
+  STATE.lat = pos.coords.latitude.toFixed(5);
+  STATE.lng = pos.coords.longitude.toFixed(5);
+  const acc = Math.round(pos.coords.accuracy);
+
+  const el = document.getElementById('loc-coords');
+  el.className = 'loc-coords';
+  el.style.color = 'var(--safe)';
+  el.innerHTML = `📍 ${STATE.lat}°N, ${STATE.lng}°E`;
+  document.getElementById('loc-accuracy').textContent = `Accuracy: ±${acc}m · ${source}`;
+  
+  updateAlertMsg();
+  addLog('safe', `📍 Location acquired (${source}) · ${STATE.lat}°N, ${STATE.lng}°E`, '📍');
+}
+
+function handleLocationError(err) {
+  let msg = 'Position unavailable.';
+  switch(err.code) {
+    case err.PERMISSION_DENIED:
+      msg = 'Permission denied. Allow location access in browser/device settings.';
+      break;
+    case err.POSITION_UNAVAILABLE:
+      msg = 'GPS signal lost or unavailable.';
+      break;
+    case err.TIMEOUT:
+      msg = 'Location request timed out. Click "Refresh Location" to try again.';
+      break;
+  }
+  displayLocationError(msg);
+}
+
+function displayLocationError(msg) {
+  STATE.lat = null;
+  STATE.lng = null;
+  const el = document.getElementById('loc-coords');
+  el.className = 'loc-coords';
+  el.style.color = 'var(--danger)';
+  el.innerHTML = `⚠️ Location Unavailable`;
+  document.getElementById('loc-accuracy').textContent = msg;
+  updateAlertMsg();
+  addLog('warn', `⚠️ ${msg}`, '⚠️');
+}
+
+function buildAlertText() {
+  const lat = STATE.lat || 'Unknown';
+  const lng = STATE.lng || 'Unknown';
+  const mapLink = STATE.lat && STATE.lng ? `https://maps.google.com/?q=${lat},${lng}` : 'Unavailable';
+  const ts = new Date().toLocaleString();
+  return { lat, lng, mapLink, ts };
+}
+
+function updateAlertMsg() {
+  const { lat, lng, mapLink, ts } = buildAlertText();
+  document.getElementById('msg-coords').textContent  = `📍 Location: ${lat !== 'Unknown' ? lat + '°N, ' + lng + '°E' : 'Not acquired'}`;
+  document.getElementById('msg-maplink').innerHTML   = `🗺 Map: ${mapLink !== 'Unavailable' ? `<a class="msg-line-link" href="${mapLink}" target="_blank">${mapLink}</a>` : 'Unavailable'}`;
+  document.getElementById('msg-time').textContent    = ts;
+}
+
+function getFullAlertText() {
+  const { lat, lng, mapLink, ts } = buildAlertText();
+  return `🚨 EMERGENCY ALERT — SHEGUARD X\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `User may be in DANGER. Immediate help needed.\n` +
+    `📍 Location: ${lat !== 'Unknown' ? lat + '°N, ' + lng + '°E' : 'Not acquired'}\n` +
+    `🗺 Map: ${mapLink}\n` +
+    `⏱ Time: ${ts}\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `Please call immediately or contact authorities.`;
+}
+
+/* ═══════════════════════════════════════
+   SIMULATE DANGER
+═══════════════════════════════════════ */
+function simulateDanger() {
+  if (STATE.mode === 'alert') return;
+  STATE.mode = 'alert';
+  document.body.classList.add('alert-mode');
+
+  // Orb
+  const orb = document.getElementById('main-orb');
+  orb.className = 'orb alert-orb';
+  document.getElementById('orb-emoji').textContent = '🚨';
+  document.getElementById('orb-label').textContent = 'ALERT';
+
+  // Headline
+  const hl = document.getElementById('status-headline');
+  hl.textContent = 'DANGER DETECTED';
+  hl.className = 'status-headline danger';
+  document.getElementById('status-sub').textContent = 'Sending emergency alert · Recording evidence';
+
+  // Risk → HIGH
+  setRisk('high');
+
+  // Danger btn
+  document.getElementById('danger-btn').classList.add('active-danger');
+  document.getElementById('danger-btn').textContent = '🚨 ALERT ACTIVE';
+
+  // Show alert card
+  document.getElementById('alert-msg-box').classList.add('visible');
+  updateAlertMsg();
+  ['sms-btn','wa-btn','copy-btn'].forEach(id => document.getElementById(id).classList.add('live'));
+
+  // Reset btn
+  document.getElementById('reset-btn').classList.add('show');
+
+  // Start recording simulation
+  startRecordingDemo();
+
+  addLog('danger','⚡ DANGER TRIGGERED — switching to ALERT mode','🚨');
+  addLog('danger',`📍 Location captured for alert · Lat ${STATE.lat||'Unknown'}, Lng ${STATE.lng||'Unknown'}`, '📍');
+  addLog('warn','🔴 Auto-recording evidence · Alert message generated','⚠️');
+  addLog('safe','📲 Ready to send SMS · WhatsApp · Copy options active','✅');
+}
+
+/* ═══════════════════════════════════════
+   RESET
+═══════════════════════════════════════ */
+function resetSystem() {
+  STATE.mode = 'safe';
+  document.body.classList.remove('alert-mode');
+
+  const orb = document.getElementById('main-orb');
+  orb.className = 'orb safe-orb';
+  document.getElementById('orb-emoji').textContent = '✅';
+  document.getElementById('orb-label').textContent = 'SAFE';
+  setTimeout(() => { orb.className = 'orb'; document.getElementById('orb-emoji').textContent = '🛡'; document.getElementById('orb-label').textContent = 'SAFE'; }, 3000);
+
+  document.getElementById('status-headline').textContent = 'YOU ARE SAFE';
+  document.getElementById('status-headline').className = 'status-headline safe';
+  document.getElementById('status-sub').textContent = 'Alert cleared · Resuming passive monitoring';
+
+  evaluateRisk();
+
+  const db = document.getElementById('danger-btn');
+  db.classList.remove('active-danger');
+  db.innerHTML = '<span>⚡</span> SIMULATE DANGER';
+
+  document.getElementById('alert-msg-box').classList.remove('visible');
+  ['sms-btn','wa-btn','copy-btn'].forEach(id => document.getElementById(id).classList.remove('live'));
+  document.getElementById('reset-btn').classList.remove('show');
+
+  stopRecording();
+  addLog('safe','✅ Alert cleared by user · System returned to SAFE mode · Monitoring resumed','✅');
+}
+
+/* ═══════════════════════════════════════
+   SMS / WHATSAPP / COPY
+═══════════════════════════════════════ */
+function sendSMS() {
+  const msg = getFullAlertText();
+  const url = `sms:?&body=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+  addLog('safe','📲 SMS app opened · Alert pre-loaded · Ready to send','✅');
+}
+
+function sendWhatsApp() {
+  const msg = getFullAlertText();
+  const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+  addLog('safe','💬 WhatsApp opened · Alert message pre-filled · Choose contact & send','✅');
+}
+
+function copyAlert() {
+  const msg = getFullAlertText();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(msg).then(() => showToast('✅ Copied to clipboard!'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = msg; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('✅ Copied to clipboard!');
+  }
+  addLog('safe','📋 Alert message copied to clipboard','✅');
+}
+
+/* ═══════════════════════════════════════
+   MIC / RECORDING
+═══════════════════════════════════════ */
+function toggleMic() {
+  if (STATE.micActive) {
+    stopMic();
+  } else {
+    startMic();
+  }
+}
+
+function startMic() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    addLog('warn','🎙 Mic API not available in this browser — simulating audio','⚠️');
+    simulateMicActive();
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    STATE.micActive = true;
+    updateMicUI(true);
+    STATE.mediaStream = stream;
+    addLog('safe','🎙 Microphone access granted · Listening for voice triggers','✅');
+    setTimeout(() => {
+      if (STATE.mode === 'safe' && STATE.micActive) {
+        addLog('warn','🔊 Voice pattern analyzed · No distress keywords detected · Monitoring…','⚠️');
+      }
+    }, 3000);
+  }).catch(() => {
+    addLog('warn','🎙 Mic permission denied — using simulated detection mode','⚠️');
+    simulateMicActive();
+  });
+}
+
+function simulateMicActive() {
+  STATE.micActive = true;
+  updateMicUI(true);
+  addLog('safe','🎙 Simulated voice detection active · Keywords: Help, Bachao, Leave me, Stop','✅');
+}
+
+function stopMic() {
+  STATE.micActive = false;
+  if (STATE.mediaStream) { STATE.mediaStream.getTracks().forEach(t=>t.stop()); STATE.mediaStream = null; }
+  updateMicUI(false);
+  addLog('safe','🎙 Microphone deactivated','✅');
+}
+
+function updateMicUI(active) {
+  const btn = document.getElementById('mic-btn');
+  const dot = document.getElementById('mic-dot');
+  const lbl = document.getElementById('mic-label');
+  const ico = document.getElementById('mic-icon');
+  if (active) {
+    btn.classList.add('mic-active');
+    dot.style.display = 'block';
+    lbl.textContent = 'Mic Listening…';
+    ico.textContent = '🔴';
+  } else {
+    btn.classList.remove('mic-active');
+    dot.style.display = 'none';
+    lbl.textContent = 'Enable Mic Detection';
+    ico.textContent = '🎙';
+  }
+}
+
+function startRecordingDemo() {
+  document.getElementById('rec-dot').classList.add('recording');
+  document.getElementById('rec-text').textContent = 'RECORDING';
+  document.getElementById('rec-sub').textContent = 'Evidence capture active';
+  STATE.recStart = Date.now();
+  STATE.recInterval = setInterval(() => {
+    const secs = Math.floor((Date.now() - STATE.recStart) / 1000);
+    const m = String(Math.floor(secs/60)).padStart(2,'0');
+    const s = String(secs%60).padStart(2,'0');
+    document.getElementById('rec-duration').textContent = `${m}:${s}`;
+  }, 1000);
+
+  if (STATE.mediaStream) {
+    try {
+      STATE.mediaRecorder = new MediaRecorder(STATE.mediaStream);
+      STATE.recChunks = [];
+      STATE.mediaRecorder.ondataavailable = e => STATE.recChunks.push(e.data);
+      STATE.mediaRecorder.start();
+    } catch(e) { /* fallback sim */ }
+  }
+}
+
+function stopRecording() {
+  document.getElementById('rec-dot').classList.remove('recording');
+  document.getElementById('rec-text').textContent = 'Standby';
+  document.getElementById('rec-sub').textContent = 'Mic not recording';
+  clearInterval(STATE.recInterval);
+  document.getElementById('rec-duration').textContent = '—';
+  if (STATE.mediaRecorder && STATE.mediaRecorder.state !== 'inactive') {
+    STATE.mediaRecorder.stop();
+  }
+}
+
+/* ═══════════════════════════════════════
+   AUDIO BAR ANIMATION
+═══════════════════════════════════════ */
+function animateBars() {
+  const bars = document.querySelectorAll('.ab');
+  const isAlert = STATE.mode === 'alert';
+  const hasSignal = STATE.micActive || isAlert;
+  bars.forEach(b => {
+    if (hasSignal) {
+      const h = Math.floor(Math.random() * 28) + 4;
+      b.style.height = h + 'px';
+      b.classList.remove('active','danger-active');
+      b.classList.add(isAlert ? 'danger-active' : 'active');
+    } else {
+      b.style.height = '5px';
+      b.classList.remove('active','danger-active');
+    }
+  });
+}
+
+/* ═══════════════════════════════════════
+   RISK ENGINE
+═══════════════════════════════════════ */
+function evaluateRisk() {
+  if (STATE.mode === 'alert') { setRisk('high'); return; }
+  const hour = new Date().getHours();
+  const isNight = hour < 6 || hour >= 21;
+  const isEvening = hour >= 18 && hour < 21;
+  const isOffline = STATE.offlineDemo || STATE.netMode === 'ble';
+
+  let risk = 'low';
+  if (isNight || isOffline) risk = 'high';
+  else if (isEvening) risk = 'medium';
+
+  setRisk(risk);
+
+  document.getElementById('rf-time').textContent   = isNight ? '🌙 Night — High Risk' : isEvening ? '🌆 Evening' : '☀️ Daytime';
+  document.getElementById('rf-net').textContent    = isOffline ? '📡 Offline' : '📶 Connected';
+  document.getElementById('rf-motion').textContent = '🚶 Moving';
+}
+
+function setRisk(level) {
+  STATE.riskLevel = level;
+  const p = document.getElementById('risk-pill');
+  p.className = 'risk-pill ' + level;
+  p.textContent = level.toUpperCase();
+}
+
+/* ═══════════════════════════════════════
+   NETWORK MODES
+═══════════════════════════════════════ */
+function setNetMode(mode) {
+  STATE.netMode = mode;
+  ['n1','n2','n3'].forEach(id => document.getElementById(id).className = 'net-tag');
+  const labels = { full:'All features active', sms:'SMS fallback · No app needed', ble:'Offline mesh · BLE only' };
+  const classes = { full:'on', sms:'on-warn', ble:'on-off' };
+  const ids = { full:'n1', sms:'n2', ble:'n3' };
+  document.getElementById(ids[mode]).className = 'net-tag ' + classes[mode];
+  document.getElementById('net-mode-label').textContent = labels[mode];
+  evaluateRisk();
+
+  const msgs = {
+    full: '📶 Full 4G mode · App alerts + SMS + location sharing active',
+    sms:  '📱 SMS fallback mode · Alerts sent via text without internet',
+    ble:  '📡 BLE Offline mode · Mesh relay + cached maps + SMS only',
+  };
+  addLog(mode==='full'?'safe':mode==='sms'?'warn':'warn', msgs[mode], mode==='full'?'✅':'⚠️');
+}
+
+function toggleOfflineDemo() {
+  STATE.offlineDemo = !STATE.offlineDemo;
+  const pill = document.getElementById('online-pill');
+  const banner = document.getElementById('offline-banner');
+  if (STATE.offlineDemo) {
+    pill.classList.add('offline');
+    document.getElementById('pip-label').textContent = 'OFFLINE';
+    banner.classList.add('show');
+    addLog('warn','📡 Offline demo mode activated · SMS + BLE fallbacks engaged','⚠️');
+  } else {
+    pill.classList.remove('offline');
+    document.getElementById('pip-label').textContent = 'ONLINE';
+    banner.classList.remove('show');
+    addLog('show');
+    addLog('safe','📶 Reconnected to network · Full features restored','✅');
+  }
+  evaluateRisk();
+}
+
+/* ═══════════════════════════════════════
+   LOG
+═══════════════════════════════════════ */
+function addLog(type, msg, icon) {
+  const now = new Date();
+  const ts = [now.getHours(),now.getMinutes(),now.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+  const el = document.createElement('div');
+  el.className = `log-entry ${type}`;
+  el.innerHTML = `<span style="font-size:14px">${icon}</span><div class="log-body">${msg}</div><div class="log-ts">${ts}</div>`;
+  const list = document.getElementById('log-scroll');
+  list.insertBefore(el, list.firstChild);
+  if (list.children.length > 25) list.removeChild(list.lastChild);
+}
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
