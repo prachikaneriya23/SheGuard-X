@@ -1,0 +1,15 @@
+{
+  "short_name": "SheGuard-X",
+  "name": "SheGuard-X Safety App",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1160/1160358.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#121212",
+  "theme_color": "#e63946",
+  "display": "standalone"
+}

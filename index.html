@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#0D0B1A"/>
 <meta name="description" content="SHEGUARD X — Offline Autonomous Safety System"/>
 <title>SHEGUARD X</title>
-<link rel="manifest" href="#"/>
+<link rel="manifest" href="manifest.json" />
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ═══════════════════════════════════════════
    DESIGN TOKENS — Soft-trust palette
@@ -475,7 +475,7 @@ footer strong { color:var(--text); }
     <button class="btn-danger" id="danger-btn" onclick="simulateDanger()">
       <span>⚡</span> SIMULATE DANGER
     </button>
-    <button class="btn-secondary" id="mic-btn" onclick="toggleMic()">
+    <button class="btn-secondary" id="mic-btn" onclick="handleMicClick()"></button>
       <span id="mic-icon">🎙</span>
       <span id="mic-label">Enable Mic Detection</span>
       <span class="mic-dot" id="mic-dot" style="width:7px;height:7px;border-radius:50%;background:var(--danger);display:none"></span>
@@ -1016,5 +1016,6 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 </script>
+<script src="app.js"></script>
 </body>
 </html>
