@@ -1,7 +1,7 @@
 // 1. Initialize Supabase (REPLACE WITH YOUR ACTUAL SUPABASE KEYS)
 const SUPABASE_URL = 'https://lpiclnzjpdasbkxnhtqj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwaWNsbnpqcGRhc2JreG5odHFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDEwMTMsImV4cCI6MjEwMTUxNzAxM30.wmjIY1YBAAKXyCbAm4SWQJSuTYUINVQ4JQod6S5uLXw';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = window.supabase.createClient(https://lpiclnzjpdasbkxnhtqj.supabase.co, eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwaWNsbnpqcGRhc2JreG5odHFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDEwMTMsImV4cCI6MjEwMTUxNzAxM30.wmjIY1YBAAKXyCbAm4SWQJSuTYUINVQ4JQod6S5uLXw);
 
 // 2. Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
